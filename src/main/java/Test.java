@@ -1,10 +1,7 @@
-package rxf113;
-
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import kotlin.coroutines.CoroutineContext;
 import kotlin.coroutines.EmptyCoroutineContext;
-import kotlinx.coroutines.Job;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -19,52 +16,78 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * @author rxf113
+ */
+@SuppressWarnings("all")
 public class Test {
 
     static Logger logger = LoggerFactory.getLogger(Test.class);
-
 
     static ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     static CountDownLatch countDownLatch = new CountDownLatch(20);
 
-    public static String reqAndCountDown() {
-        httpReq();
+    /**
+     * 20次调用后结束
+     */
+    public static void reqAndCountDown() {
+//        httpReq();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         countDownLatch.countDown();
-        return "t1";
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         long be = System.currentTimeMillis();
-        //线程
-//        executorService.execute(() -> {
-//            for (int i = 0; i < 20; i++) {
-//                reqAndCountDown();
-//            }
-//        });
+        //线程直接调用
+        //testThread();
 
-        //线程调用协程
-        KotlinCoroutine kotlinCoroutine = new KotlinCoroutine();
-        executorService.execute(() -> {
-            kotlinCoroutine.test(new Continuation<Unit>() {
-                @NotNull
-                @Override
-                public CoroutineContext getContext() {
-                    return EmptyCoroutineContext.INSTANCE;
-                }
+//        //调用kotlin协程
+        testCoroutine();
 
-                @Override
-                public void resumeWith(@NotNull Object o) {
-
-                }
-            });
-        });
         countDownLatch.await();
-        logger.info(" ==== over ==== , cost time : {} ms", (System.currentTimeMillis() - be));
+        logger.info(" ==== 下载完成 ==== , 耗时 : {} ms", (System.currentTimeMillis() - be));
         System.in.read();
     }
 
+    private static void testThread() {
+        executorService.execute(() -> {
+            for (int i = 0; i < 20; i++) {
+                reqAndCountDown();
+            }
+        });
+    }
 
+    /**
+     * 调用kotlin协程
+     */
+    private static void testCoroutine() {
+        KotlinCoroutine kotlinCoroutine = new KotlinCoroutine();
+        executorService.execute(() -> {
+            for (int i = 0; i < 4; i++) {
+                kotlinCoroutine.test(new Continuation<Unit>() {
+                    @NotNull
+                    @Override
+                    public CoroutineContext getContext() {
+                        return EmptyCoroutineContext.INSTANCE;
+                    }
+
+                    @Override
+                    public void resumeWith(@NotNull Object o) {
+
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * http请求
+     */
     private static void httpReq() {
         OkHttpClient client = new OkHttpClient.Builder().build();
         Request get = new Request.Builder()
@@ -81,10 +104,5 @@ public class Test {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-//        String a = "";
-//        for (int i = 0; i < 10_0000; i++) {
-//            a = a.concat(Integer.toString(i));
-//        }
-//        System.out.println(a.length());
     }
 }

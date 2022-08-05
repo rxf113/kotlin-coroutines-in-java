@@ -13,6 +13,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
+/**
+ * 自定义一个简单的http服务器，通过 http://localhost:8093/xx 访问
+ *
+ * @author rxf113
+ */
+@SuppressWarnings("all")
 public class CustomerHttpServer {
 
     static Logger logger = LoggerFactory.getLogger(CustomerHttpServer.class);
@@ -29,7 +35,8 @@ public class CustomerHttpServer {
                 try {
                     TimeUnit.SECONDS.sleep(2);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
                 }
                 exchange.sendResponseHeaders(200, 0);
                 OutputStream responseBody = exchange.getResponseBody();
